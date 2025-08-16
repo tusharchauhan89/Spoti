@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your Playlists - Spotify Clone</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+        /* Reset & base */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            user-select: none;
+        }
+        
+        body {
+            background-color: #121212;
+            color: #fff;
+            min-height: 100vh;
+            padding: 30px 50px;
+        }
+        
+        h1 {
+            font-weight: 700;
+            font-size: 2.8rem;
+            margin-bottom: 40px;
+            color: #1db954;
+            user-select: text;
+        }
+        /* Grid container for playlists */
+        
+        .playlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 30px;
+        }
+        /* Playlist card */
+        
+        .playlist-card {
+            background-color: #181818;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.25s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            user-select: none;
+        }
+        
+        .playlist-card:hover {
+            background-color: #282828;
+            transform: translateY(-5px);
+        }
+        /* Playlist thumbnail */
+        
+        .playlist-thumb {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 6px 15px rgba(29, 185, 84, 0.5);
+        }
+        
+        .playlist-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        /* Playlist title */
+        
+        .playlist-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 5px;
+            user-select: text;
+        }
+        /* Delete button styled as a small icon on the top right */
+        
+        .delete-btn {
+            position: relative;
+            background-color: transparent;
+            border: none;
+            color: #ff4c4c;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            align-self: flex-end;
+            margin-bottom: 10px;
+            user-select: none;
+        }
+        
+        .delete-btn:hover {
+            color: #ff0000;
+        }
+        /* Create playlist form */
+        
+        form#create-playlist-form {
+            max-width: 480px;
+            margin-bottom: 40px;
+            display: flex;
+            gap: 12px;
+        }
+        
+        form#create-playlist-form input[type="text"] {
+            flex-grow: 1;
+            padding: 14px 20px;
+            border-radius: 30px;
+            border: none;
+            background-color: #282828;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: background-color 0.3s;
+        }
+        
+        form#create-playlist-form input[type="text"]:focus {
+            background-color: #3a3a3a;
+        }
+        
+        form#create-playlist-form button {
+            background-color: #1db954;
+            color: #000;
+            border: none;
+            border-radius: 30px;
+            padding: 14px 30px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(29, 185, 84, 0.4);
+            transition: background-color 0.3s;
+        }
+        
+        form#create-playlist-form button:hover {
+            background-color: #1ed760;
+        }
+        /* Navigation links */
+        
+        .nav-links {
+            margin-top: 50px;
+            display: flex;
+            gap: 30px;
+            font-weight: 500;
+        }
+        
+        .nav-links a {
+            color: #b3b3b3;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+        /* Responsive */
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 20px;
+            }
+            form#create-playlist-form {
+                flex-direction: column;
+            }
+            form#create-playlist-form input[type="text"],
+            form#create-playlist-form button {
+                width: 100%;
+            }
+            .playlist-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎵 Your Playlists</h1>
+
+    <form id="create-playlist-form" method="POST" action="{{ url_for('create_playlist') }}">
+        <input type="text" name="name" placeholder="Create new playlist" required autocomplete="off" />
+        <button type="submit">Create</button>
+    </form>
+
+    <div class="playlist-grid">
+        {% for playlist in playlists %}
+        <div class="playlist-card">
+            <form method="POST" action="{{ url_for('delete_playlist', playlist_id=playlist.id) }}">
+                <button type="submit" class="delete-btn" title="Delete Playlist">✕</button>
+            </form>
+            <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" title="{{ playlist.name }}">
+                <div class="playlist-thumb">
+                    <!-- Placeholder thumbnail, replace with actual playlist art if available -->
+                    <img src="{{ playlist.image_url or url_for('static', filename='images/playlist_placeholder.png') }}" alt="{{ playlist.name }}">
+                </div>
+                <div class="playlist-title">{{ playlist.name }}</div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="nav-links">
+        <a href="{{ url_for('recently_played') }}">🕘 Recently Played</a>
+        <a href="{{ url_for('index') }}">🔙 Back to Player</a>
+    </div>
+
+</body>
+
+</html>

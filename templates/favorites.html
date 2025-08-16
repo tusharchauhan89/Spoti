@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>❤️ Liked Songs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        
+        .song-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .song-card {
+            display: flex;
+            align-items: center;
+            background-color: #1e1e1e;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .album-cover {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 15px;
+        }
+        
+        .song-info {
+            flex-grow: 1;
+        }
+        
+        .song-info strong {
+            font-size: 18px;
+        }
+        
+        audio {
+            width: 200px;
+        }
+        
+        a {
+            color: #1db954;
+            text-decoration: none;
+            margin-top: 20px;
+            display: inline-block;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>❤️ Your Liked Songs</h1>
+
+    {% if songs %}
+    <div class="song-list">
+        {% for song in songs %}
+        <div class="song-card">
+            <img class="album-cover" src="{{ song.image_url or '/static/default_cover.jpg' }}" alt="Album Cover">
+            <div class="song-info">
+                <strong>{{ song.name }}</strong><br>
+                <em>{{ song.artist }}</em><br>
+                <audio controls src="{{ song.youtube_url }}"></audio>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>You haven’t liked any songs yet.</p>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}">⬅ Back</a>
+</body>
+
+</html>

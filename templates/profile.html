@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Your Profile</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .card {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 15px;
+            display: inline-block;
+            margin: 20px auto;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            color: #1DB954;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #1DB954;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        button:hover {
+            background-color: #17a44b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>👤 {{ user.username }}</h1>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>❤️ Liked Songs:</strong> {{ liked_count }}</p>
+        <p><strong>🕒 Recently Played:</strong> {{ recently_played_count }}</p>
+        <p><strong>📁 Your Playlists:</strong> {{ playlist_count }}</p>
+
+        <form action="{{ url_for('player') }}" method="get">
+            <button>🎵 Back to Player</button>
+        </form>
+        <form action="/logout" method="get">
+            <button>🚪 Logout</button>
+        </form>
+    </div>
+</body>
+
+</html>

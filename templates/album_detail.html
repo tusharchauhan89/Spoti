@@ -1,0 +1,125 @@
+<!-- templates/album_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Album Detail</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #121212;
+            color: #fff;
+            margin: 0;
+        }
+        
+        header {
+            padding: 20px;
+            text-align: center;
+            background: #1db954;
+            color: white;
+        }
+        
+        .album-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .album-header img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        
+        .album-header h1 {
+            font-size: 2rem;
+            margin: 0;
+        }
+        
+        .section {
+            padding: 20px;
+        }
+        
+        .song-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .song-list li {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .song-list li:hover {
+            background: #1db954;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Album Detail</h1>
+    </header>
+
+    <div class="album-header">
+        <img id="album-image" src="" alt="Album Image">
+        <div>
+            <h1 id="album-name"></h1>
+            <p id="album-year"></p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Songs</h2>
+        <ul class="song-list" id="songsList"></ul>
+    </div>
+
+    <script>
+        const albumId = "{{ album_id }}";
+        const albumNameEl = document.getElementById('album-name');
+        const albumImageEl = document.getElementById('album-image');
+        const albumYearEl = document.getElementById('album-year');
+        const songsList = document.getElementById('songsList');
+
+        async function loadAlbum() {
+            try {
+                const res = await fetch(`/album/${albumId}`);
+                const data = await res.json();
+
+                albumNameEl.textContent = data.name;
+                albumYearEl.textContent = data.year || '';
+                albumImageEl.src = data.image || '/static/default_album.png';
+
+                if (data.songs && data.songs.length) {
+                    data.songs.forEach(song => {
+                        const li = document.createElement('li');
+                        li.textContent = song.name;
+                        li.onclick = () => window.location.href = `/song/${song.id}`;
+                        songsList.appendChild(li);
+                    });
+                } else {
+                    songsList.innerHTML = '<li>No songs found.</li>';
+                }
+
+            } catch (err) {
+                console.error(err);
+                songsList.innerHTML = '<li>Error loading songs.</li>';
+            }
+        }
+
+        loadAlbum();
+    </script>
+
+</body>
+
+</html>

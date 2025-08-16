@@ -1,0 +1,37 @@
+<h2>🎧 Playback Queue</h2>
+<div id="queueContainer"></div>
+
+<script>
+    function loadQueue() {
+        fetch('/queue')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('queueContainer');
+                container.innerHTML = '';
+
+                if (data.length === 0) {
+                    container.innerHTML = '<p>No songs in queue.</p>';
+                    return;
+                }
+
+                data.forEach(song => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+            <p><strong>${song.name}</strong> by ${song.artist}</p>
+            <button onclick="removeFromQueue(${song.id})">Remove</button>
+          `;
+                    container.appendChild(div);
+                });
+            });
+    }
+
+    function removeFromQueue(songId) {
+        fetch(`/queue/remove/${songId}`, {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(() => loadQueue());
+    }
+
+    loadQueue();
+</script>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ artist.name }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #fff;
+            padding: 60px 40px 120px;
+            /* bottom padding for mini player */
+        }
+        
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+        /* Top bar */
+        
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #1a1a1a;
+            padding: 10px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        
+        .top-bar h1 {
+            font-size: 1.8rem;
+        }
+        
+        .artist-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+        
+        .artist-header img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin-right: 30px;
+            object-fit: cover;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        h2 {
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #1db954;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+        
+        ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        li {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            padding: 15px;
+            flex: 1 1 calc(33% - 20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, background-color 0.2s;
+            position: relative;
+        }
+        
+        li:hover {
+            transform: translateY(-5px);
+            background-color: #2a2a2a;
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .card-header img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+        
+        .album-name,
+        .song-name {
+            font-weight: 600;
+        }
+        
+        .song-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .song-info span {
+            font-size: 0.85rem;
+            color: #b3b3b3;
+        }
+        
+        audio {
+            width: 100%;
+            margin-top: 10px;
+            outline: none;
+        }
+        /* Mini floating player */
+        
+        .mini-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #181818;
+            padding: 10px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        
+        .mini-player audio {
+            width: 70%;
+        }
+        
+        @media screen and (max-width: 900px) {
+            li {
+                flex: 1 1 calc(50% - 20px);
+            }
+        }
+        
+        @media screen and (max-width: 600px) {
+            li {
+                flex: 1 1 100%;
+            }
+            .artist-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .artist-header img {
+                margin: 0 0 15px 0;
+            }
+            body {
+                padding: 100px 20px 150px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top bar -->
+    <div class="top-bar">
+        <h1>{{ artist.name }}</h1>
+        <button onclick="playAll()">Play All</button>
+    </div>
+
+    <div class="artist-header">
+        {% if artist.image %}
+        <img src="{{ artist.image }}" alt="{{ artist.name }}"> {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>Albums</h2>
+        <ul>
+            {% for album in artist.albums %}
+            <li>
+                <div class="card-header">
+                    {% if album.image %}
+                    <img src="{{ album.image }}" alt="{{ album.name }}"> {% endif %}
+                    <div class="album-name">
+                        <a href="{{ album.url }}" target="_blank">{{ album.name }}</a>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Songs</h2>
+        <ul>
+            {% for song in artist.songs %}
+            <li>
+                <div class="card-header">
+                    {% if song.image %}
+                    <img src="{{ song.image }}" alt="{{ song.name }}"> {% endif %}
+                    <div class="song-name">
+                        <a href="{{ song.url }}" target="_blank">{{ song.name }}</a>
+                    </div>
+                </div>
+                <div class="song-info">
+                    <span>{{ song.duration }}s</span>
+                </div>
+                {% if song.audio_url %}
+                <audio controls class="song-audio">
+                    <source src="{{ song.audio_url }}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio> {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Mini player -->
+    <div class="mini-player">
+        <span id="current-song">Select a song to play...</span>
+        <audio id="mini-audio" controls></audio>
+    </div>
+
+    <script>
+        const audios = document.querySelectorAll('.song-audio');
+        const miniAudio = document.getElementById('mini-audio');
+        const currentSong = document.getElementById('current-song');
+
+        audios.forEach(audio => {
+            audio.addEventListener('play', () => {
+                // Pause all other audios
+                audios.forEach(a => {
+                    if (a !== audio) a.pause();
+                });
+                // Set mini player
+                miniAudio.src = audio.querySelector('source').src;
+                miniAudio.play();
+                currentSong.textContent = audio.closest('li').querySelector('.song-name a').textContent;
+            });
+        });
+
+        function playAll() {
+            if (audios.length > 0) {
+                audios[0].play();
+            }
+        }
+    </script>
+</body>
+
+</html>

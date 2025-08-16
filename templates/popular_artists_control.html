@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Popular Artists Control</title>
+</head>
+
+<body>
+    <h1>Popular Artists Control Panel</h1>
+
+    <form action="{{ url_for('fetch_top_bollywood_artists') }}" method="get">
+        <button type="submit">Update Top Bollywood Artists</button>
+    </form>
+
+    <br />
+
+    <a href="{{ url_for('popular_artists') }}">See Popular Artists</a>
+
+</body>
+
+</html>

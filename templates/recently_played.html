@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Recently Played</title>
+    <style>
+        body {
+            background: #121212;
+            color: #fff;
+            font-family: Arial;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #1db954;
+        }
+        
+        .song-card {
+            display: flex;
+            align-items: center;
+            background-color: #1e1e1e;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .album-cover {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 15px;
+        }
+        
+        .song-info a {
+            color: #1db954;
+            text-decoration: none;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🕘 Recently Played Songs</h1>
+
+    {% for song in songs %}
+    <div class="song-card">
+        <img class="album-cover" src="{{ song.image_url or '/static/default_cover.jpg' }}">
+        <div class="song-info">
+            <a href="#" onclick="playSong('{{ song.youtube_url }}'); return false;">
+                {{ song.name }} by {{ song.artist }}
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+
+    <audio id="mainPlayer" controls style="width: 100%; margin-top: 20px;"></audio>
+
+    <script>
+        function playSong(url) {
+            const player = document.getElementById('mainPlayer');
+            if (player.src !== url) {
+                player.src = url;
+            }
+            player.play();
+        }
+    </script>
+
+    <a href="{{ url_for('index') }}" style="color: #ccc; margin-top: 20px; display: inline-block;">🔙 Back to Home</a>
+</body>
+
+</html>

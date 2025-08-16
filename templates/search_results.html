@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Search results for "{{ query }}"</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding-bottom: 90px;
+            /* space for player */
+        }
+        
+        h2 {
+            padding: 20px;
+            font-size: 22px;
+        }
+        
+        .song-list {
+            list-style: none;
+            padding: 0 20px;
+        }
+        
+        .song-list li {
+            border-radius: 6px;
+            transition: background 0.2s;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+        
+        .song-list li:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .song-list a {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 6px;
+        }
+        
+        .song-list a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .song-list img {
+            width: 50px;
+            height: 50px;
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+        
+        .song-info {
+            flex: 1;
+        }
+        
+        .song-info strong {
+            display: block;
+            font-size: 14px;
+        }
+        
+        .song-info span {
+            font-size: 12px;
+            color: #b3b3b3;
+        }
+        /* Sticky player at bottom */
+        
+        .player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #181818;
+            border-top: 1px solid #333;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .player img {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
+        }
+        
+        .player-info {
+            flex: 1;
+        }
+        
+        .player-info strong {
+            display: block;
+        }
+        
+        .player-info span {
+            color: #b3b3b3;
+            font-size: 12px;
+        }
+        
+        audio {
+            width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Search results for "{{ query }}"</h2>
+    <ul class="song-list">
+        {% for song in songs %}
+        <li>
+            <a href="{{ url_for('play_song', song_id=song.id) }}">
+
+                <img src="{{ song.image }}" alt="{{ song.title }}">
+                <div class="song-info">
+                    <strong>{{ song.title }}</strong>
+                    <span>{{ song.artist }} — {{ song.album }}</span>
+                </div>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Sticky Player -->
+    <div class="player">
+        <img id="player-image" src="" alt="Cover">
+        <div class="player-info">
+            <strong id="player-title">Select a song</strong>
+            <span id="player-artist"></span>
+        </div>
+        <audio id="player-audio" controls></audio>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,112 @@
+<!-- templates/song_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Detail</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #121212;
+            color: #fff;
+            margin: 0;
+        }
+        
+        header {
+            padding: 20px;
+            text-align: center;
+            background: #1db954;
+            color: white;
+        }
+        
+        .song-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .song-block img {
+            width: 250px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .song-block h1 {
+            font-size: 2rem;
+            margin: 10px 0;
+        }
+        
+        .song-block .sub {
+            margin: 5px 0;
+        }
+        
+        .lyrics {
+            margin-top: 20px;
+            padding: 10px;
+            background: #181818;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+        }
+        
+        audio {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 600px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Song Detail</h1>
+    </header>
+
+    <div class="song-block">
+        <img id="song-image" src="" alt="Song Image">
+        <h1 id="song-title"></h1>
+        <div class="sub" id="song-artist"></div>
+        <div class="sub" id="song-album"></div>
+        <div class="lyrics" id="song-lyrics">Lyrics not available</div>
+        <audio id="audio" controls></audio>
+    </div>
+
+    <script>
+        const songId = "{{ song_id }}";
+        const songTitleEl = document.getElementById('song-title');
+        const songArtistEl = document.getElementById('song-artist');
+        const songAlbumEl = document.getElementById('song-album');
+        const songImageEl = document.getElementById('song-image');
+        const songLyricsEl = document.getElementById('song-lyrics');
+        const audioEl = document.getElementById('audio');
+
+        async function loadSong() {
+            try {
+                const res = await fetch(`/song/${songId}`);
+                const data = await res.json();
+
+                songTitleEl.textContent = data.title;
+                songArtistEl.textContent = data.artist || '';
+                songAlbumEl.textContent = data.album || '';
+                songImageEl.src = data.image || '/static/default_album.png';
+                audioEl.src = data.audio_url || '';
+            } catch (err) {
+                console.error(err);
+                songTitleEl.textContent = 'Error loading song';
+            }
+        }
+
+        loadSong();
+    </script>
+
+</body>
+
+</html>

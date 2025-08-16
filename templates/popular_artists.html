@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Popular Artists</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: #fff;
+            margin: 0;
+        }
+        
+        h1 {
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .toolbar {
+            padding: 0 20px 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .section-title {
+            padding: 0 20px;
+            margin: 20px 0 10px;
+            font-size: 20px;
+            opacity: .9;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            padding: 0 20px 20px;
+        }
+        
+        .card {
+            background: #181818;
+            border-radius: 8px;
+            overflow: hidden;
+            text-align: center;
+            cursor: pointer;
+            transition: transform .2s;
+        }
+        
+        .card:hover {
+            transform: scale(1.04);
+        }
+        
+        .card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background: #222;
+        }
+        
+        .name {
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .muted {
+            opacity: .7;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Artists</h1>
+
+    <!-- Search bar -->
+    <div class="toolbar">
+        <input id="searchBox" class="search-input" placeholder="Search artists..." autocomplete="off" />
+    </div>
+
+    <!-- Search results -->
+    <div id="searchSection" style="display:none;">
+        <div class="section-title">Search results</div>
+        <div id="searchGrid" class="grid"></div>
+        <p id="noSearchMsg" class="muted" style="display:none;">No artists found.</p>
+    </div>
+
+    <!-- Popular artists -->
+    <div class="section-title">Top Popular Artists</div>
+    <div id="popularGrid" class="grid"></div>
+    <p id="popularError" class="muted" style="display:none;">Failed to load popular artists.</p>
+
+
+    <script>
+        const searchBox = document.getElementById('searchBox');
+        const searchSection = document.getElementById('searchSection');
+        const searchGrid = document.getElementById('searchGrid');
+        const noSearchMsg = document.getElementById('noSearchMsg');
+        const popularGrid = document.getElementById('popularGrid');
+        const popularError = document.getElementById('popularError');
+
+        const imgFallback = '/static/default-artist.png';
+
+        function normalizeId(id) {
+            if (typeof id === 'object' && id !== null) {
+                return id.id || Object.values(id)[0];
+            }
+            if (Array.isArray(id)) {
+                return id[0];
+            }
+            return id;
+        }
+
+        function cardFor(artist) {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `
+            <img src="${artist.image_url || imgFallback}" alt="${artist.name}">
+            <div class="name">${artist.name}</div>
+        `;
+            div.addEventListener('click', () => {
+                const safeId = normalizeId(artist.id);
+                window.location.href = '/artist/' + encodeURIComponent(String(safeId));
+            });
+            return div;
+        }
+
+        function renderList(container, artists) {
+            container.innerHTML = '';
+            artists.forEach(a => container.appendChild(cardFor(a)));
+        }
+
+        async function loadPopular() {
+            try {
+                const res = await fetch('/api/popular-artists');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                renderList(popularGrid, data.artists || []);
+            } catch (e) {
+                console.error('Popular artists error:', e);
+                popularError.style.display = 'block';
+            }
+        }
+
+        async function doSearch(query) {
+            if (!query) {
+                searchSection.style.display = 'none';
+                searchGrid.innerHTML = '';
+                noSearchMsg.style.display = 'none';
+                return;
+            }
+            try {
+                const res = await fetch('/search-artists?q=' + encodeURIComponent(query));
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const artists = data.artists || [];
+                searchSection.style.display = 'block';
+                if (artists.length === 0) {
+                    searchGrid.innerHTML = '';
+                    noSearchMsg.style.display = 'block';
+                } else {
+                    noSearchMsg.style.display = 'none';
+                    renderList(searchGrid, artists);
+                }
+            } catch (e) {
+                console.error('Search error:', e);
+                searchSection.style.display = 'block';
+                searchGrid.innerHTML = '';
+                noSearchMsg.textContent = 'Error searching artists.';
+                noSearchMsg.style.display = 'block';
+            }
+        }
+
+        function debounce(fn, delay) {
+            let t;
+            return (...args) => {
+                clearTimeout(t);
+                t = setTimeout(() => fn(...args), delay);
+            };
+        }
+
+        searchBox.addEventListener('input', debounce(e => {
+            doSearch(e.target.value.trim());
+        }, 300));
+
+        loadPopular();
+    </script>
+
+</body>
+
+</html>

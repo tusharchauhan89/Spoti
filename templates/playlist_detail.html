@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ playlist.name }} - Playlist</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        h1 {
+            margin-bottom: 30px;
+        }
+        
+        .song-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .song-card {
+            display: flex;
+            align-items: center;
+            background-color: #1e1e1e;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .album-cover {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 20px;
+        }
+        
+        .song-info {
+            flex-grow: 1;
+        }
+        
+        .song-info a {
+            color: #1db954;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        
+        .song-info a:hover {
+            text-decoration: underline;
+        }
+        
+        .remove-button {
+            background-color: #ff4c4c;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .remove-button:hover {
+            background-color: #e60000;
+        }
+        
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .back-link {
+            margin-top: 30px;
+            display: inline-block;
+            color: #aaa;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📃 Playlist: {{ playlist.name }}</h1>
+
+    {% if songs %}
+    <div class="song-list">
+        {% for song in songs %}
+        <div class="song-card">
+            <img class="album-cover" src="{{ song.image_url or '/static/default_cover.jpg' }}" alt="Album Cover">
+            <div class="song-info">
+                <a href="#" onclick="playSong('{{ song.youtube_url }}'); return false;">
+                    {{ song.name }} by {{ song.artist }}
+                </a>
+            </div>
+            <form method="POST" action="{{ url_for('remove_song_from_playlist', playlist_id=playlist.id, song_id=song.id) }}">
+                <button type="submit" class="remove-button">Remove</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <audio id="mainPlayer" controls>
+        Your browser does not support the audio element.
+    </audio>
+
+    <script>
+        function playSong(url) {
+            const player = document.getElementById('mainPlayer');
+            if (player.src !== url) {
+                player.src = url;
+            }
+            player.play();
+        }
+    </script>
+
+    {% else %}
+    <p>No songs in this playlist.</p>
+    {% endif %}
+
+    <a href="{{ url_for('list_playlists') }}" class="back-link">🔙 Back to All Playlists</a>
+</body>
+
+</html>

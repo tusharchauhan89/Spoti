@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Liked Songs</title>
+</head>
+
+<body>
+    <h1>❤️ Your Liked Songs</h1>
+
+    {% if songs %}
+    <ul>
+        {% for song in songs %}
+        <li>
+            <strong>{{ song.name }}</strong> by {{ song.artist }}<br>
+            <audio controls src="{{ song.youtube_url }}"></audio>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>You haven’t liked any songs yet.</p>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}">⬅ Back</a>
+</body>
+
+</html>

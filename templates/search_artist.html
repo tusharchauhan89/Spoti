@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Search Artist</title>
+</head>
+
+<body>
+    <h1>Search Artist</h1>
+
+    <!-- SEARCH BOX ALWAYS VISIBLE -->
+    <form method="get" action="{{ url_for('search_artist') }}">
+        <input type="text" name="q" placeholder="Type artist name..." value="{{ query or '' }}" required />
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- ERROR MESSAGE -->
+    {% if error %}
+    <p style="color:red;">{{ error }}</p>
+    {% endif %}
+
+    <!-- ARTISTS RESULTS -->
+    {% if artists %}
+    <h2>Results:</h2>
+    <ul>
+        {% for artist in artists %}
+        <li>
+            {% if artist.image %}
+            <img src="{{ artist.image }}" alt="{{ artist.name }}" width="50" /> {% endif %}
+            <a href="/artist/{{ artist.id }}">{{ artist.name }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% elif query %}
+    <p>No results found for "{{ query }}"</p>
+    {% endif %}
+</body>
+
+</html>

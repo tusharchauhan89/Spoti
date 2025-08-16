@@ -1,0 +1,353 @@
+<!-- templates/player.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spotify Clone Player</title>
+
+    <!-- Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-pbC0Jg6rKPCr+XWy5GZjV+8Q8bJ+5u+e2tC1M+1VxgEO7AdssENR4y1G8YsmnzzQ3PSdzfHEvZrU9tD+oIb8fQ==" crossorigin="anonymous" referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <!-- Font Awesome (icons) -->
+    <script src="https://kit.fontawesome.com/a81368914c.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" role="navigation" aria-label="Main navigation">
+            <div class="logo">SPOTIFY</div>
+
+            <nav class="nav-links" aria-label="Primary">
+                <a href="{{ url_for('index') }}" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="{{ url_for('list_playlists') }}"><i class="fas fa-book"></i> Your Library</a>
+                <a href="{{ url_for('view_favorites') }}"><i class="fas fa-heart"></i> Liked Songs</a>
+                <a href="{{ url_for('recently_played') }}"><i class="fas fa-clock"></i> Recently Played</a>
+                <a href="{{ url_for('user_profile') }}"><i class="fas fa-user"></i> Profile</a>
+                <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="{{ url_for('popular_artists') }}"><i class="fas fa-users"></i> Popular Artists</a>
+            </nav>
+
+            <div class="playlists" aria-label="Playlists">
+                {% for pl in playlists %}
+                <a href="{{ url_for('view_playlist', playlist_id=pl.id) }}">{{ pl.name }}</a> {% else %}
+                <div style="color:#8f8f8f;padding:6px 8px">No playlists yet</div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main">
+            <!-- Topbar -->
+            <div class="topbar">
+                <form action="{{ url_for('search') }}" method="get" class="search" role="search">
+                    <input type="search" name="q" placeholder="Search for songs, artists, albums..." required />
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path
+                            d="M21.71 20.29l-3.388-3.388A7.95 7.95 0 0017 10a8 8 0 10-8 8 7.95 7.95 0 006.902-3.678l3.388 3.388a1 1 0 001.414-1.414zM10 16a6 6 0 116-6 6.006 6.006 0 01-6 6z" /></svg>
+                </form>
+                <button id="voiceControlBtn" title="Voice Control 🎤" style="margin-left: 10px; background:#1db954; border:none; color:white; padding:6px 12px; border-radius:20px; cursor:pointer;">
+                        🎤 Voice
+                    </button>
+                <div class="user" onclick="window.location.href='{{ url_for('user_profile') }}'">
+                    <img src="https://avatars.githubusercontent.com/u/9919?s=40&v=4" alt="User avatar">
+                    <span>{{ session.get('username','User') }}</span>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <section class="song-block" aria-label="Song block">
+                    <div class="cover">
+                        <img id="song-image" src="{{ image or '/static/default_album.png' }}" alt="Album art">
+                    </div>
+
+                    <div class="meta">
+                        <h1 class="title" id="song-title">
+                            {{ title or "Select a Song" }}
+                            <!-- Like button -->
+
+                        </h1>
+                        <div class="sub" id="song-artist">{{ artist or "Unknown Artist" }}</div>
+                        <div class="sub" id="song-album">{{ album or "" }}</div>
+
+                        <div class="lyrics" id="song-lyrics">{{ lyrics or "Lyrics not available" }}</div>
+
+                        <!-- big audio/progress -->
+                        <div class="big-audio">
+                            <div class="time" id="top-current">0:00</div>
+                            <input id="top-range" type="range" min="0" max="100" value="0">
+                            <div class="time" id="top-duration">0:00</div>
+                        </div>
+
+                        <!-- playlist add -->
+                        <form id="addToPlaylistForm" method="POST" class="playlist-form" style="{{ 'display:flex;' if song_id and playlists else 'display:none;' }}">
+                            <input type="hidden" name="song_id" value="{{ song_id }}">
+                            <input type="hidden" name="name" value="{{ title }}">
+                            <input type="hidden" name="artist" value="{{ artist }}">
+                            <input type="hidden" name="album" value="{{ album }}">
+                            <input type="hidden" name="youtube_url" value="{{ audio_url }}">
+                            <input type="hidden" name="image_url" value="{{ image }}">
+                            <select name="playlist_id" id="playlistSelect" required>
+                                <option value="" disabled selected>Select Playlist</option>
+                                {% for playlist in playlists %}
+                                <option value="{{ playlist.id }}">{{ playlist.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit">Add to Playlist</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Bottom player -->
+        <footer class="bottom">
+            <div class="bp-left">
+                <img id="bottom-song-image" src="{{ image or '/static/default_album.png' }}" alt="album">
+                <div class="bp-meta">
+                    <div class="name" id="bottom-song-title">{{ title or "No song playing" }}</div>
+                    <div class="artist" id="bottom-song-artist">{{ artist or "" }}</div>
+                </div>
+            </div>
+
+            <div class="bp-controls">
+                <div class="controls-row">
+                    <div class="circle icon-btn" id="shuffleBtn" title="Shuffle"><i class="fas fa-random"></i></div>
+                    <div class="circle icon-btn" id="prevBtn" title="Previous"><i class="fas fa-step-backward"></i></div>
+                    <div class="play-circle" id="playBtn" title="Play/Pause"><i class="fas fa-play" id="playIcon"></i></div>
+                    <div class="circle icon-btn" id="nextBtn" title="Next"><i class="fas fa-step-forward"></i></div>
+                    <div class="circle icon-btn" id="repeatBtn" title="Repeat"><i class="fas fa-redo"></i></div>
+
+                    <div class="bp-progress" style="margin-left:16px;">
+                        <input id="progress" type="range" min="0" max="100" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bp-right">
+                <div class="icon-btn" title="Queue"><i class="fas fa-list"></i></div>
+                <div class="icon-btn" title="Devices"><i class="fas fa-desktop"></i></div>
+                <div style="width:90px; display: flex; align-items: center;">
+                    <input id="volume" type="range" min="0" max="100" value="80" style="width:100%">
+                    <!-- Voice Control Button -->
+
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Hidden HTML5 audio -->
+    <audio id="audio" src="{{ audio_url or '' }}"></audio>
+
+    <script src="{{ url_for('static', filename='js/player.js') }}"></script>
+
+    <!-- Voice control script -->
+    <script>
+        (() => {
+            const audio = document.getElementById('audio');
+            const voiceBtn = document.getElementById('voiceControlBtn');
+            const volumeSlider = document.getElementById('volume');
+            let recognition = null;
+            let listening = false;
+
+            // Setup SpeechRecognition
+            function setupRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    alert('Your browser does not support Speech Recognition');
+                    return null;
+                }
+                const recog = new SpeechRecognition();
+                recog.lang = 'en-IN'; // Indian English + Hindi mix
+                recog.interimResults = true; // better realtime feedback
+                recog.maxAlternatives = 1;
+                recog.continuous = false;
+                return recog;
+            }
+
+            recognition = setupRecognition();
+
+            // Text to speech female voice pick
+            const synth = window.speechSynthesis;
+            let femaleVoice = null;
+
+            function pickFemaleVoice() {
+                const voices = synth.getVoices();
+                if (!voices.length) return;
+                const priorities = ['Google UK English Female', 'Google US English', 'Microsoft Zira', 'female'];
+                for (const p of priorities) {
+                    const v = voices.find(voice => voice.name.toLowerCase().includes(p.toLowerCase()));
+                    if (v) {
+                        femaleVoice = v;
+                        return;
+                    }
+                }
+                femaleVoice = voices.find(v => /female/i.test(v.name)) || voices[0];
+            }
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = pickFemaleVoice;
+            }
+            pickFemaleVoice();
+
+            function speak(text) {
+                if (!synth) return;
+                const utter = new SpeechSynthesisUtterance(text);
+                if (femaleVoice) utter.voice = femaleVoice;
+                utter.lang = femaleVoice && femaleVoice.lang ? femaleVoice.lang : 'en-IN';
+                utter.rate = 1;
+                utter.pitch = 1;
+                synth.cancel();
+                synth.speak(utter);
+            }
+
+            function playSong() {
+                if (audio.src) {
+                    audio.play();
+                    speak("Playing song");
+                } else {
+                    speak("No song loaded to play");
+                }
+            }
+
+            function pauseSong() {
+                audio.pause();
+                speak("Paused");
+            }
+
+            function nextSong() {
+                const nextBtn = document.getElementById('nextBtn');
+                if (nextBtn) {
+                    nextBtn.click();
+                    speak("Skipping to next song");
+                }
+            }
+
+            function prevSong() {
+                const prevBtn = document.getElementById('prevBtn');
+                if (prevBtn) {
+                    prevBtn.click();
+                    speak("Playing previous song");
+                }
+            }
+
+            function changeVolume(delta) {
+                let vol = parseInt(volumeSlider.value) + delta;
+                vol = Math.min(100, Math.max(0, vol));
+                volumeSlider.value = vol;
+                volumeSlider.dispatchEvent(new Event('input'));
+                speak(`Volume set to ${vol} percent`);
+            }
+
+            function setVolume(percent) {
+                let vol = Math.min(100, Math.max(0, percent));
+                volumeSlider.value = vol;
+                volumeSlider.dispatchEvent(new Event('input'));
+                speak(`Volume set to ${vol} percent`);
+            }
+
+            function processCommand(command) {
+                command = command.toLowerCase().trim();
+                console.log('Voice command:', command);
+
+                // Remove "song" keyword to avoid confusion
+                command = command.replace(/\bsong\b/g, '').trim();
+
+                if (command.includes('play')) {
+                    if (command.includes('pause')) {
+                        pauseSong();
+                    } else {
+                        playSong();
+                    }
+                    return;
+                }
+                if (command.includes('pause') || command.includes('stop')) {
+                    pauseSong();
+                    return;
+                }
+                if (command.includes('next') || command.includes('skip')) {
+                    if (command.includes('twice') || command.includes('two times')) {
+                        nextSong();
+                        setTimeout(nextSong, 700);
+                    } else {
+                        nextSong();
+                    }
+                    return;
+                }
+                if (command.includes('previous') || command.includes('prev') || command.includes('back')) {
+                    prevSong();
+                    return;
+                }
+                if (command.includes('volume up') || command.includes('increase volume') || command.includes('turn up the volume')) {
+                    changeVolume(10);
+                    return;
+                }
+                if (command.includes('volume down') || command.includes('decrease volume') || command.includes('turn down the volume')) {
+                    changeVolume(-10);
+                    return;
+                }
+                const setVolMatch = command.match(/set volume to (\d+)/);
+                if (setVolMatch) {
+                    let volNum = parseInt(setVolMatch[1]);
+                    setVolume(volNum);
+                    return;
+                }
+                if (command.startsWith('play')) {
+                    let searchTerm = command.replace('play', '').trim();
+                    if (searchTerm) {
+                        const searchInput = document.querySelector('form.search input[name="q"]');
+                        if (searchInput) {
+                            searchInput.value = searchTerm;
+                            searchInput.form.submit();
+                            speak(`Searching and playing ${searchTerm}`);
+                            return;
+                        }
+                    }
+                }
+
+                speak("Sorry, I didn't understand that. Try play, pause, next, previous, or volume commands.");
+            }
+
+            if (!recognition) return;
+
+            recognition.onstart = () => {
+                listening = true;
+                voiceBtn.textContent = '🔴 Listening...';
+            };
+            recognition.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                console.log('Recognized text:', text);
+                voiceBtn.textContent = '🎤 Voice';
+                listening = false;
+                processCommand(text);
+            };
+            recognition.onerror = (e) => {
+                console.error('Speech recognition error:', e.error);
+                speak("Sorry, I couldn't hear you. Please try again.");
+                voiceBtn.textContent = '🎤 Voice';
+                listening = false;
+            };
+            recognition.onend = () => {
+                listening = false;
+                voiceBtn.textContent = '🎤 Voice';
+            };
+
+            voiceBtn.addEventListener('click', () => {
+                if (listening) {
+                    recognition.stop();
+                    return;
+                }
+                recognition.start();
+            });
+
+        })();
+    </script>
+
+</body>
+
+</html>

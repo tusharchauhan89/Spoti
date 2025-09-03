@@ -106,3 +106,15 @@ class Admin(db.Model):
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+# user favourite
+class UserFavorites(db.Model):
+    __tablename__ = 'user_favorites'
+
+    id = db.Column(db.Integer, primary_key=True)  # Must have a primary key
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    song_id = db.Column(db.Integer, db.ForeignKey('song.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    # Optional: enforce unique combination of user and song
+    __table_args__ = (db.UniqueConstraint('user_id', 'song_id', name='_user_song_uc'),)
+

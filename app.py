@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, session, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from models import db, User, Song, Playlist, PlaylistSong, RecentlyPlayed, QueueItem, Favorite, Artist, PlaybackSettings
+from models import db, User, Song, Playlist, PlaylistSong, RecentlyPlayed, QueueItem, Favorite, Artist, PlaybackSettings,  UserFavorites
 import requests
 
 from flask_migrate import Migrate 
@@ -87,10 +87,15 @@ def search():
         return redirect(url_for('login'))
 
     query = request.args.get('q', '').strip()
+    page = int(request.args.get('page', 1))
+    sort_by = request.args.get('sort', 'default')  # default, name, popularity
+
     if not query:
         return "No search query provided", 400
 
-    url = f"https://saavn.dev/api/search/songs?query={query}"
+    # Saavn API URL with pagination (assuming API supports start/limit)
+    url = f"https://saavn.dev/api/search/songs?query={query}&page={page}"
+    
     try:
         res = requests.get(url, timeout=10)
         res.raise_for_status()
@@ -98,14 +103,16 @@ def search():
 
         results = data.get("data", {}).get("results", [])
         if not results:
-            return render_template("search_results.html", query=query, songs=[])
+            return render_template("search_results.html", query=query, songs=[], page=page)
 
         songs = []
+        user_id = session['user_id']
+
         for song_data in results:
-            # Title
+            # Extract basic info
             title = song_data.get("name") or "Unknown Title"
 
-            # Artist Name
+            # Artist
             primary_artists = song_data.get("primary_artists") or []
             if isinstance(primary_artists, str):
                 artist_name = primary_artists
@@ -114,27 +121,23 @@ def search():
             else:
                 artist_name = "Unknown Artist"
 
-            # Artist object in DB
+            # Get or create artist in DB
             artist_obj = Artist.query.filter_by(name=artist_name).first()
             if not artist_obj:
                 artist_obj = Artist(name=artist_name)
                 db.session.add(artist_obj)
                 db.session.commit()
 
-            # Image URL
-            image_url = ""
+            # Image
             image_data = song_data.get("image")
-            if isinstance(image_data, list) and image_data:
-                image_url = image_data[-1].get("url", "")
-            elif isinstance(image_data, str):
-                image_url = image_data
+            image_url = image_data[-1]["url"] if isinstance(image_data, list) else image_data or ""
 
             # Album
             album = song_data.get("album", {}).get("name") or "Unknown Album"
 
-            # Audio URL (prefer 320kbps, then 128kbps)
-            audio_url = ""
+            # Audio URL
             download_url = song_data.get("downloadUrl")
+            audio_url = ""
             if isinstance(download_url, list):
                 for item in reversed(download_url):
                     if isinstance(item, dict) and "url" in item:
@@ -146,7 +149,7 @@ def search():
             # Lyrics
             lyrics = song_data.get("lyrics") or "Lyrics not available"
 
-            # Save song in DB if not already there
+            # Save song in DB
             song_obj = Song.query.filter_by(name=title, artist_id=artist_obj.id).first()
             if not song_obj:
                 song_obj = Song(
@@ -160,17 +163,27 @@ def search():
                 db.session.add(song_obj)
                 db.session.commit()
 
-            # Append song to list for rendering
+            # Check if this song is favorite
+            is_favorite = UserFavorites.query.filter_by(user_id=user_id, song_id=song_obj.id).first() is not None
+
+            # Append to list
             songs.append({
-                "id": song_obj.id,    
+                "id": song_obj.id,
                 "title": title,
                 "artist": artist_name,
                 "album": album,
                 "url": audio_url,
-                "image": image_url
+                "image": image_url,
+                "favorite": is_favorite
             })
 
-        return render_template("search_results.html", query=query, songs=songs)
+        # Sorting
+        if sort_by == "name":
+            songs.sort(key=lambda x: x['title'])
+        elif sort_by == "popularity":
+            songs.sort(key=lambda x: x.get('popularity', 0), reverse=True)
+
+        return render_template("search_results.html", query=query, songs=songs, page=page, sort_by=sort_by)
 
     except requests.exceptions.RequestException as re:
         print(f"[ERROR] HTTP Request failed: {re}")
@@ -178,6 +191,24 @@ def search():
     except Exception as e:
         print(f"[ERROR] General error in /search: {e}")
         return "An error occurred while searching", 500
+
+
+# Auto-complete endpoint (AJAX)
+@app.route('/autocomplete')
+def autocomplete():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+
+    url = f"https://saavn.dev/api/search/songs?query={query}&limit=5"
+    try:
+        res = requests.get(url, timeout=5)
+        res.raise_for_status()
+        data = res.json()
+        suggestions = [song.get("name") for song in data.get("data", {}).get("results", []) if song.get("name")]
+        return jsonify(suggestions)
+    except:
+        return jsonify([])
 
 # --------------CREATE PLAYLIST 
 
@@ -287,33 +318,7 @@ def create_default_playlist():
         return "Default playlist created!"
     return "Playlist already exists!"
 
-@app.route('/favorites/add', methods=['POST'])
-def add_to_favorites():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
 
-    song_id = request.form.get('song_id')
-    if not song_id:
-        return "Song ID required", 400
-
-    existing = Favorite.query.filter_by(user_id=session['user_id'], song_id=song_id).first()
-    if not existing:
-        fav = Favorite(user_id=session['user_id'], song_id=song_id)
-        db.session.add(fav)
-        db.session.commit()
-
-    return redirect(url_for('index'))
-
-@app.route('/favorites')
-def view_favorites():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    fav_songs = Song.query.join(Favorite).filter(Favorite.user_id == session['user_id']).all()
-    return render_template('favorites.html', songs=fav_songs)
-
-
-# likee unlike btnn
 
 
 
@@ -516,6 +521,13 @@ def play_song(song_id):
     context['current_index'] = queue_song_ids.index(song.id)
     session['playback_context'] = context
 
+    # ----- FAVORITE LOGIC -----
+    song_favorite = False
+    if 'user_id' in session:
+        song_favorite = UserFavorites.query.filter_by(
+            user_id=session["user_id"], song_id=song.id
+        ).first() is not None
+
     return render_template('player.html',
                            title=song.name,
                            artist=song.artist_obj.name if song.artist_obj else "Unknown Artist",
@@ -523,7 +535,9 @@ def play_song(song_id):
                            lyrics=song.lyrics,
                            image=song.image_url,
                            audio_url=song.youtube_url,
-                           song_id=song.id)
+                           song_id=song.id,
+                           song_favorite=song_favorite)  # <-- Pass to template
+
 
 
 
@@ -637,6 +651,94 @@ def album_detail(album_id):
 
 
 
+# ----------------- Toggle Favorite Route -----------------
+@app.route("/toggle_favorite", methods=["POST"])
+def toggle_favorite():
+    if "user_id" not in session:
+        return jsonify({"error": "Login required"}), 403
+
+    data = request.get_json()
+    song_id = data.get("song_id")
+
+    if not song_id:
+        return jsonify({"error": "Song ID required"}), 400
+
+    fav = UserFavorites.query.filter_by(user_id=session["user_id"], song_id=song_id).first()
+
+    if fav:
+        db.session.delete(fav)
+        db.session.commit()
+        return jsonify({"status": "removed"})
+    else:
+        new_fav = UserFavorites(user_id=session["user_id"], song_id=song_id)
+        db.session.add(new_fav)
+        db.session.commit()
+        return jsonify({"status": "added"})
+
+
+
+@app.route('/favorites/add', methods=['POST'])
+def add_to_favorites():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    song_id = request.form.get('song_id')
+    if not song_id:
+        return "Song ID required", 400
+
+    # Check if the song is already in favorites
+    existing = UserFavorites.query.filter_by(user_id=session['user_id'], song_id=song_id).first()
+    if not existing:
+        fav = UserFavorites(user_id=session['user_id'], song_id=song_id)
+        db.session.add(fav)
+        db.session.commit()
+
+    return redirect(url_for('index'))
+
+
+@app.route("/favorites")
+def view_favorites():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session["user_id"]
+
+    fav_songs = db.session.query(Song)\
+                  .join(UserFavorites, Song.id == UserFavorites.song_id)\
+                  .filter(UserFavorites.user_id == user_id)\
+                  .all()
+
+    songs = []
+    for s in fav_songs:
+        songs.append({
+            "id": s.id,
+            "title": s.name,
+            "artist": s.artist_obj.name if s.artist_obj else "Unknown Artist",
+            "image": s.image_url or "/static/default_album.png",
+            "url": s.youtube_url,   # 👈 yaha tumhara audio_url
+        })
+
+    return render_template("favorites.html", songs=songs)
+
+
+    # ----------- ADD THIS LINE ----------------
+    return render_template(
+        "favorites.html",
+        songs=fav_songs,
+        current_song=current_song,
+        song_id=current_song.id if current_song else None,
+        song_favorite=bool(current_song and UserFavorites.query.filter_by(
+            user_id=session["user_id"], song_id=current_song.id
+        ).first())
+    )
+@app.route('/remove_favorite/<int:song_id>', methods=['POST'])
+def remove_favorite(song_id):
+    fav = Favorite.query.filter_by(song_id=song_id).first()
+    if fav:
+        db.session.delete(fav)
+        db.session.commit()
+        return {"success": True}, 200
+    return {"error": "Not found"}, 404
 
 if __name__ == '__main__':
     with app.app_context():

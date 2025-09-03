@@ -186,3 +186,53 @@ window.addEventListener('load', () => {
         loadSongFrontend(currentQueue[0], 0); // auto-play first song
     }
 });
+const bottomFavBtn = document.getElementById("bottom-favorite-btn");
+
+if (bottomFavBtn) {
+    bottomFavBtn.addEventListener("click", () => {
+        const songId = bottomFavBtn.dataset.songId;
+        const icon = bottomFavBtn.querySelector("i");
+
+        console.log("Clicked fav button:", songId); // debug
+
+        if (!songId) {
+            alert("No current song playing");
+            return;
+        }
+
+        fetch("/toggle_favorite", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ song_id: songId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Server response:", data); // debug
+                if (data.status === "added") {
+                    icon.classList.remove("far");
+                    icon.classList.add("fas");
+                } else if (data.status === "removed") {
+                    icon.classList.remove("fas");
+                    icon.classList.add("far");
+                }
+            })
+            .catch(err => console.error("Fetch error:", err));
+    });
+}
+document.querySelectorAll(".removeBtn").forEach((btn) => {
+    btn.addEventListener("click", async(e) => {
+        const card = e.target.closest(".song-card");
+        const songId = card.dataset.id;
+
+        try {
+            let res = await fetch(`/remove_favorite/${songId}`, { method: "POST" });
+            if (res.ok) {
+                card.remove(); // frontend se turant remove
+            } else {
+                alert("Error removing song!");
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    });
+});
